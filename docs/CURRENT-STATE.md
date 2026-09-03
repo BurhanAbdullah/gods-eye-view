@@ -2583,6 +2583,12 @@ Replay transport uses one Play/Pause toggle plus Cancel. During ascent only the 
   with an OWNER-RUN tag rather than failed. Run with `--list` to print the
   manual checks it cannot automate.
 
+### Proximity alert policy
+
+- Added `src/data/proximityPolicy.js`, a pure source-agnostic threshold state machine for future awareness/contact notifications. It provides inclusive enter/exit thresholds, optional hysteresis, explicit `UNKNOWN` handling, immutable multi-target ledgers, and stale-target removal.
+- The module is currently opt-in and does not alter any live source layer or UI. Consumers should react only to `ENTER` / `EXIT`; `UNKNOWN` is not evidence of an alert.
+- Contract and examples are documented in `docs/proximity-alert-policy.md`; focused tests live beside the module.
+
 ## Maintenance Rule
 
 When runtime behavior or architecture changes, update this file in the same change set as code updates.

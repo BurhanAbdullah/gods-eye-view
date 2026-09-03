@@ -5,6 +5,11 @@ of current runtime behavior, see [`docs/CURRENT-STATE.md`](docs/CURRENT-STATE.md
 
 ## [Unreleased]
 
+### Added
+
+- Added a reusable, source-agnostic proximity alert policy with hysteresis, explicit `UNKNOWN` handling, immutable multi-target state updates, and stale-target removal semantics.
+
+
 ## [0.1.1] — 2026-09-01 — Installation and live-data fixes
 
 ### Changed
