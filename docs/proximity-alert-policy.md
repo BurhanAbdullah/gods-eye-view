@@ -1,26 +1,25 @@
 # Proximity alert policy
 
-This contribution adds a pure, source-agnostic proximity state machine that can be shared by God's Eye View data layers.
+God's Eye View already exposes several live sources whose objects can be near a point of interest. This contribution extracts the alert semantics from those source adapters so future notifications do not each invent their own threshold handling.
 
-## Behavior
+## Contract
 
-`src/data/proximityPolicy.js` converts distance observations into stable states and edge events:
+`src/data/proximityPolicy.js` is a pure ES module. It has no Cesium, DOM, network, or source-specific imports.
 
-- `ENTER` when a target crosses into the configured radius.
-- `INSIDE` while it remains within the watch.
-- `EXIT` when an in-range target reaches the exit threshold.
-- `UNKNOWN` when the observation is invalid or unavailable.
+A policy is defined by `enterRadiusM` and `exitRadiusM`. Enter is inclusive at or below the enter radius; exit is inclusive at or above the exit radius. `exitRadiusM` must be greater than or equal to `enterRadiusM`.
 
-The policy supports hysteresis by separating enter and exit thresholds, preventing contacts hovering around a boundary from repeatedly firing.
+The evaluator returns `ENTER` once on an outside/uninitialized → inside transition, `INSIDE` while inside, `EXIT` once on an inside → outside transition, `OUTSIDE` while outside, and `UNKNOWN` for invalid/unavailable observations or invalid policies.
 
-## Source-agnostic by design
+## Missing data is not an alert
 
-The state machine has no Cesium, DOM, network, or UI dependency. Aircraft, vessels, satellites, fires, installations, and future user-defined sources can reuse the same semantics.
+An invalid observation never fabricates an `ENTER` or `EXIT`. In the multi-target helper, `UNKNOWN` also leaves the target's last known state in place. A temporary feed outage therefore cannot silently create an exit, and recovery cannot fabricate a new enter event.
 
-`UNKNOWN` is silent by design: an unavailable or stale feed must not be converted into a claim that a target entered or left.
+## Multi-target state
 
-## Integration path
+`updateProximityState(states, targetId, distanceM, policy)` returns a new `Map` rather than mutating the caller's map. Target IDs are trimmed strings; blank IDs are rejected.
 
-The existing awareness/contact stack already computes nearby entities and is the natural first consumer. A layer can keep a `Map` keyed by source + target ID and call `updateProximityState()` as refreshed distances arrive.
+`removeProximityTarget(states, targetId)` returns a new ledger with the target removed, allowing source adapters to release state when an object disappears permanently.
 
-Only `ENTER` and `EXIT` should drive notifications. Presentation can later choose a toast, HUD marker, or voice event without putting alert policy into the source adapters.
+## Intended integration
+
+An awareness/contact layer can keep a map keyed by `source:targetId`, feed fresh distance observations through `updateProximityState()`, and act only on `ENTER` / `EXIT`. Presentation stays outside this module so a future HUD, toast, voice event, or log can consume the same policy without duplicating threshold logic.
