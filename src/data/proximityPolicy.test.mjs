@@ -66,3 +66,18 @@ test('multi-target ledger isolates state by stable target id', () => {
   assert.equal(states.get('aircraft:A'), PROXIMITY_STATUS.INSIDE);
   assert.equal(states.get('aircraft:B'), PROXIMITY_STATUS.OUTSIDE);
 });
+
+test('UNKNOWN does not erase the last known state in the multi-target ledger', () => {
+  let states = new Map();
+  states = updateProximityState(states, 'aircraft:A', 5000, POLICY).states;
+  const update = updateProximityState(states, 'aircraft:A', null, POLICY);
+  assert.equal(update.result.state, PROXIMITY_STATUS.UNKNOWN);
+  assert.equal(update.states.get('aircraft:A'), PROXIMITY_STATUS.INSIDE);
+});
+
+test('empty target ids are rejected without mutating the ledger', () => {
+  const states = new Map([['aircraft:A', PROXIMITY_STATUS.INSIDE]]);
+  const update = updateProximityState(states, '', 5000, POLICY);
+  assert.deepEqual([...update.states.entries()], [...states.entries()]);
+  assert.equal(update.result.state, PROXIMITY_STATUS.UNKNOWN);
+});
